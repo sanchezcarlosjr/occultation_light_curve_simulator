@@ -1,8 +1,8 @@
 package "slc"
-version "1.1"
+version "2.4.1"
 purpose "Simulate TAOS II Occultation Light Curves.
 
-By sanchezcarlosjr <hello@sanchezcarlosjr.com>"
+By sanchezcarlosjr <research@sanchezcarlosjr.com>"
 
 option "verbose" v "Produce verbose output" flag off
 option "output" o "Specify output file" string required
