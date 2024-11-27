@@ -8,7 +8,33 @@ The Trans-Neptunian Automated Occultation Survey II (TAOS II) event simulator is
 Learn how to install and use the program through this [playground](https://colab.research.google.com/drive/1GCPLfTBvZLvwUEgk9O1yfWWH1MQAXUHs?usp=sharing).
 
 # Installation
-1. Install the shared libraries.
+
+## Docker
+
+1. Build the Docker image.
+```
+docker build -t slc .
+```
+
+2. Run the Docker container with the results directory mounted as a volume.
+```
+docker run -v ./results:/data slc -o x.h5
+```
+
+ProTip: Create an alias to run the Docker container to make it easier to use.
+```
+alias slc='docker run -v ./results:/data slc'
+```
+
+## Arch Linux (AUR)
+
+1. Install the AUR package
+```
+yay -S slc-bin
+```
+
+## Linux
+1. Install fftw, gsl and hdf5.
 
 For example, on Arch Linux, you would run
 ```
@@ -16,6 +42,7 @@ sudo pacman -S fftw gsl hdf5
 ```
 
 2. Download the [latest version](https://github.com/sanchezcarlosjr/occultation_light_curves/releases/latest/download/slc) from GitHub Releases, so you don't need to compile the repository; it just works.
+
 
 # Usage
 Start your simulation with default parameters and save your data into HDF5.
@@ -28,62 +55,6 @@ slc -o polymele.h5
 ```slc``` supports several options, each accessible through the ```slc``` command and through our library. For help on individual commands, add --help following the command name. The commands are available on [here](./cli/cli.ggo).
 
 
-# HDF5 Viewers
-https://myhdf5.hdfgroup.org/
+## HDF5 Viewers
 
-
-# Arch Linux (AUR)
-
-1. Install the AUR package
-```
-yay -S occultation_light_curve_simulator
-```
-
-# Contribution with Arch Linux
-
-1. Clone the repository
-```
-git clone https://github.com/sanchezcarlosjr/occultation_light_curve_simulator.git
-```
-
-Build the package to ensure it works correctly.
-2. Install with PKGBUILD
-```
-makepkg -csi
-```
-Explanation:
--c: Cleans up work files after build.
--s: Installs missing dependencies.
--i: Installs the package after building.
-
-
-# Contribution
-To contribute to this repository, you must install CMake, a C99-compatible compiler, GSL, and FFTW. Additionally, modifications to the command line interface (CLI) may necessitate the installation of gengetopt.
-As a good practice, we provide you with a test suite through Unity. This is a ready-to-go Git Submodule.
-
-1. Clone the repository
-```
-git clone --recurse-submodules -j8 https://github.com/sanchezcarlosjr/occultation_light_curve_simulator.git
-```
-
-2. Install global dependencies.
-
-a. Install FFTW from this repository.
-```
-  cd external/fftw-3.3.10
-  ./configure
-  make
-  make install
-```
-
-b. Install GSL, Unity, and hdf5 from the official docs.
-
-2. Cmake
-```
-cmake -B build && cmake --build build && cd build/bin/
-```
-
-3. Pull data to test purposes.
-```
-git lfs pull
-```
+You can view your data using HDF5 viewers such as [myhdf5](https://myhdf5.hdfgroup.org/).
