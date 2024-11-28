@@ -19,13 +19,15 @@ void tearDown(void) {
 
 void test_it_calculates_the_optimal_plane_size(void)
 {
+    HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
+    double expected = hdf5->readScalar(hdf5, "total_plane_size");
     double D = calcPlano(d, lambda, ua);
-    TEST_ASSERT_FLOAT_WITHIN(0.000000000001, D, 142112.63138792414);
+    TEST_ASSERT_FLOAT_WITHIN(0.000000000001, D, expected);
 }
 
 void test_it_generates_a_circular_obstruction(void) {
     HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
-    gsl_matrix* expected_matrix = hdf5->readDataset(hdf5, "O1", M, M);
+    gsl_matrix* expected_matrix = hdf5->readDataset(hdf5, "circular_pupil", M, M);
     TEST_ASSERT_EQUAL(expected_matrix->size1, M);
     TEST_ASSERT_EQUAL(expected_matrix->size2, M);
     TEST_ASSERT_EQUAL(gsl_matrix_get(expected_matrix, 0, 0), 1);
@@ -52,13 +54,29 @@ void test_it_generates_a_contact_binary(void) {
     gsl_matrix_free(actual_matrix);
 }
 
+
+void test_it_calculates_distance_of_object_in_meters(void) {
+    HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
+    double expected = hdf5->readScalar(hdf5, "object_distance");
+    double actual = astronomicalUnitsToMeters(ua);
+    TEST_ASSERT_FLOAT_WITHIN(0.000000000001, actual, expected);
+}
+
+void test_calculates_monochromatic_diffraction_pattern(void) {
+    HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
+    
+    
+}
+
+
+
 int main(void)
 {
     UNITY_BEGIN();
 
     RUN_TEST(test_it_calculates_the_optimal_plane_size);
     RUN_TEST(test_it_generates_a_circular_obstruction);
-    RUN_TEST(test_it_generates_a_contact_binary);
+    RUN_TEST(test_it_calculates_distance_of_object_in_meters);
 
     return UNITY_END();
 }

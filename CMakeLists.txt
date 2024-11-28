@@ -13,5 +13,5 @@ add_subdirectory(occultation_simulator)
 add_subdirectory(cli)
 add_subdirectory(external)
 
-#include(CTest)
-#add_subdirectory(tests)
+include(CTest)
+add_subdirectory(tests)

@@ -35,6 +35,15 @@ void pol2cart(double rho, double phi, double *x, double *y) {
 }
 
 
+/* Transform astronomical units to meters
+ *  @param double ua Astronomical units
+ *
+ */
+double astronomicalUnitsToMeters(double ua) {
+    return ua * 1.496e11;
+}
+
+
 /**
  * Generate a circular obstruction.
  *

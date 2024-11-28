@@ -18,14 +18,13 @@ int main(int argc, char *argv[]) {
     }
 
     double D = calcPlano(args_info.d_arg, args_info.lamb_arg, args_info.ua_arg);
+    hdf5->writeScalar(hdf5, "total_plane_size", D);
     gsl_matrix* O1 = pupilCO(args_info.M_arg, D, args_info.d_arg);
-    hdf5->writeDataset(hdf5, "O1", O1);
-    gsl_matrix* O2 = pupilDoble(args_info.M_arg, D, args_info.d_arg);
-    hdf5->writeDataset(hdf5, "O2", O2);
+    hdf5->writeDataset(hdf5, "pupil_obstruction", O1);
 
     hdf5->free(hdf5);
+
     gsl_matrix_free(O1);
-    gsl_matrix_free(O2);
 
     cmdline_parser_free(&args_info);
     return 0;
