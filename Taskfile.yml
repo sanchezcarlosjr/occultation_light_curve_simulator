@@ -7,7 +7,7 @@ tasks:
       - cmake .
       - make
       - bin/suite_1_app
-  build:
+  test:
     cmds:
       - rm -rf build
       - cmake .
