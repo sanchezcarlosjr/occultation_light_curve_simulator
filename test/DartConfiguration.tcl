@@ -5,7 +5,7 @@
 
 # Configuration directories and files
 SourceDirectory: /home/cest/Workspace/playground/occultation_light_curve_simulator
-BuildDirectory: /home/cest/Workspace/playground/occultation_light_curve_simulator
+BuildDirectory: /home/cest/Workspace/playground/occultation_light_curve_simulator/test
 
 # Where to place the cost data store
 CostDataFile: 

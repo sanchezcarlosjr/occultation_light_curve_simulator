@@ -271,65 +271,64 @@ void pupilSA(ComplexMatrix P, int M, double D, double d) {
     }
 }
 
-void fresnel(double complex *U0, int nx, int ny, int M, double plano, double z, double lmda, double complex *output_intensity) {
-    double k = 2 * M_PI / lmda;
-    double x = (plano / M) * nx; // Normally nx = M, so x = plano in meters
-    double y = (plano / M) * ny;
-    double fx = 1 / x; // Spatial frequency in m**-1
-    double fy = 1 / y;
+gsl_matrix* fresnel(gsl_matrix* circular_pupil, int M, double total_plane_size, double object_distance, double lambda) {
+    int nx = circular_pupil->size1;
+    int ny = circular_pupil->size2;
 
-    // Allocate memory for u, v, O, H, and U arrays
-    double complex *u = (double complex *) fftw_malloc(sizeof(double complex) * nx);
-    double complex *v = (double complex *) fftw_malloc(sizeof(double complex) * ny);
-    double complex *O = (double complex *) fftw_malloc(sizeof(double complex) * nx * ny);
-    double complex *H = (double complex *) fftw_malloc(sizeof(double complex) * nx * ny);
-    double complex *U = (double complex *) fftw_malloc(sizeof(double complex) * nx * ny);
+    double k = 2.0 * M_PI / lambda;
+    double x = (total_plane_size / M) * nx;
+    double y = (total_plane_size / M) * ny;
 
-    // Compute u and v arrays
-    for (int i = 0; i < nx; i++) {
-        u[i] = (i - nx / 2) * fx;
-    }
-    for (int j = 0; j < ny; j++) {
-        v[j] = (j - ny / 2) * fy;
-    }
+    double fx = 1.0 / x;
+    double fy = 1.0 / y;
 
-    // Apply FFT to U0 using FFTW
-    fftw_plan plan_forward = fftw_plan_dft_2d(nx, ny, U0, O, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_execute(plan_forward);
+    double* u = malloc(nx * sizeof(double));
+    double* v = malloc(ny * sizeof(double));
 
-    // Compute H array
-    // np.exp(1j*k*z)*np.exp(-1j*np.pi*(lmda*z)*(u**2+v**2))
+    for (int i = 0; i < nx; i++)
+        u[i] = (i - nx / 2.0) * fx;
+
+    for (int j = 0; j < ny; j++)
+        v[j] = (j - ny / 2.0) * fy;
+
+    fftw_complex* O = (fftw_complex*)fftw_malloc(nx * ny * sizeof(fftw_complex));
+    fftw_plan forward = fftw_plan_dft_2d(nx, ny, O, O, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan inverse = fftw_plan_dft_2d(nx, ny, O, O, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+    // Fill O with initial matrix values
+    for (int i = 0; i < nx; i++)
+        for (int j = 0; j < ny; j++)
+            O[i*ny + j] = gsl_matrix_get(circular_pupil, i, j);
+
+    fftw_execute(forward);
+
+    // Apply Fresnel kernel
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
-            double u_squared = creal(u[i]) * creal(u[i]);
-            double v_squared = creal(v[j]) * creal(v[j]);
-            H[i * ny + j] = cexp(I * k * z) * cexp(-I * M_PI * lmda * z * (u_squared + v_squared));
+            double phase = -M_PI * lambda * object_distance * (u[i]*u[i] + v[j]*v[j]);
+            O[i*ny + j] *= cexp(I * (k * object_distance + phase));
         }
     }
 
-    // Multiply O and H element-wise
-    for (int i = 0; i < nx * ny; i++) {
-        U[i] = O[i] * H[i];
+    fftw_execute(inverse);
+
+    gsl_matrix* intensity = gsl_matrix_alloc(nx, ny);
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            double mag = cabs(O[i*ny + j]) / (nx * ny); // Normalization after inverse FFT
+            gsl_matrix_set(intensity, i, j, mag);
+        }
     }
 
-    // Apply inverse FFT to U using FFTW
-    fftw_plan plan_backward = fftw_plan_dft_2d(nx, ny, U, output_intensity, FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_execute(plan_backward);
-
-    // Compute the intensity pattern
-    for (int i = 0; i < nx * ny; i++) {
-        output_intensity[i] = cpow(cabs(output_intensity[i]), 2);
-    }
-
-    // Free memory and destroy FFTW plans
-    fftw_free(u);
-    fftw_free(v);
+    fftw_destroy_plan(forward);
+    fftw_destroy_plan(inverse);
     fftw_free(O);
-    fftw_free(H);
-    fftw_free(U);
-    fftw_destroy_plan(plan_forward);
-    fftw_destroy_plan(plan_backward);
+    free(u);
+    free(v);
+
+    return intensity;
 }
+
 
 /* listadat.txt--> A0=1;A1=2;A2=3;A3=4;A4=5;A5=6;A7=7;F0=8;F2=9;F3=10;F5=11;F6=12;F7=13;F8=14;
  * G0=15;G1=16;G2=17;G5=18;G8=19;K0=20;K1=21;K2=22;K3=23;K4=24;K5=25;K7=26;
@@ -381,7 +380,6 @@ void spectra(double complex *U0, int nx, int ny, int M, double plano, double z, 
 
     // Assuming the data file has two columns: lamda and peso
     while (fscanf(dataFile, "%lf,%lf", &lamda, &peso) == 2) {
-        fresnel(U0, nx, ny, M, plano, z, lamda * 1e-10, output_intensity);
 
         // Weight the result by 'peso' and accumulate
         for (int i = 0; i < U0Size; i++) {

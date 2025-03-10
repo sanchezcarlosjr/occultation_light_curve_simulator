@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - rm -rf build
+      - cmake .
+      - make
+      - bin/suite_1_app

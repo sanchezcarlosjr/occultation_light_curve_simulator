@@ -4,6 +4,7 @@ Contributions are welcomed. Open a pull-request or an issue.
 To contribute to this repository, you must install CMake, a C99-compatible compiler, GSL, and FFTW. Additionally, modifications to the command line interface (CLI) may necessitate the installation of gengetopt.
 As a good practice, we provide you with a test suite through Unity. This is a ready-to-go Git Submodule.
 
+# Installation
 1. Clone the repository
 ```
 git clone --recurse-submodules -j8 https://github.com/sanchezcarlosjr/occultation_light_curve_simulator.git
@@ -30,6 +31,9 @@ cmake -B build && cmake --build build && cd build/bin/
 ```
 git lfs pull
 ```
+
+# Task runner
+https://taskfile.dev/
 
 
 ## Code of conduct

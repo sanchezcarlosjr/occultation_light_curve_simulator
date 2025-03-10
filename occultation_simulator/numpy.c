@@ -15,7 +15,7 @@ int gsl_matrix_equal_with_tolerance(const gsl_matrix* matrixA, const gsl_matrix*
         for (size_t j = 0; j < matrixA->size2; ++j) {
             double diff = fabs(gsl_matrix_get(matrixA, i, j) - gsl_matrix_get(matrixB, i, j));
             if (diff > tolerance) {
-                printf("(%zu, %zu, %f, %f), \n", i, j, gsl_matrix_get(matrixA, i, j), gsl_matrix_get(matrixB, i, j));
+                printf("Diference in element (row=%zu, column=%zu, matrixA=%f, matrixB=%f, difference=%f)\n", i, j, gsl_matrix_get(matrixA, i, j), gsl_matrix_get(matrixB, i, j), diff);
                 return 0;
             }
         }
