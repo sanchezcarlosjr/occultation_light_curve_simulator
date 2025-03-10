@@ -1,13 +1,13 @@
 version: '3'
 
 tasks:
-  build:
+  test:
     cmds:
       - rm -rf build
       - cmake .
       - make
       - bin/suite_1_app
-  test:
+  build:
     cmds:
       - rm -rf build
       - cmake .
