@@ -1,7 +1,7 @@
 version: '3'
 
 tasks:
-  test:
+  default:
     cmds:
       - rm -rf build
       - cmake .
@@ -10,5 +10,6 @@ tasks:
   build:
     cmds:
       - rm -rf build
+      - gengetopt --output-dir cli < cli/cli.ggo
       - cmake .
       - make

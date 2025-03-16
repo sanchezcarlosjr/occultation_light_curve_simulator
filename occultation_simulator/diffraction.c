@@ -334,79 +334,126 @@ gsl_matrix* fresnel(gsl_matrix* circular_pupil, int M, double total_plane_size, 
  * G0=15;G1=16;G2=17;G5=18;G8=19;K0=20;K1=21;K2=22;K3=23;K4=24;K5=25;K7=26;
  * M0=27;M1=28;M2=29;M3=30;M4=31;M5=32;M6=33;M7=34;M8=35
 */
-void spectra(double complex *U0, int nx, int ny, int M, double plano, double z, int nEst, int nLmdas, double complex *acc) {
-    char libdir[1024];
-    getLibDir(libdir, __FILE__);
-    // Define file paths - you'll need to define how libdir is set
+/**
+ * \n
+ * @brief  Translates your Python spectra function:\n
+ *         - Reads `listadat.txt` to determine which star data file to open.\n
+ *         - Reads pairs (lambda, peso).\n
+ *         - For each pair, calls fresnel(...) * peso, accumulates in `acc`.\n
+ *         - Normalizes by acc(0,0) at the end.\n
+ *
+ * @param  circular_pupil    : Input pupil (MxM)
+ * @param  M                  : Mesh size in pixels
+ * @param  total_plane_size   : Plane size in meters
+ * @param  object_distance    : Object distance in meters
+ * @param  nEst               : 1-based index for star selection in listadat.txt
+ * @param  nLmd               : Number of lines / wavelength samples from the star file
+ *
+ * @return A newly allocated MxM GSL matrix with the final (normalized) result.
+ */
+
+gsl_matrix* spectra(
+    gsl_matrix* circular_pupil,
+    int M,
+    double total_plane_size,
+    double object_distance,
+    double nEst,
+    double nLmd /* interpret as number of wavelength samples */
+)
+{
+    int rows = circular_pupil->size1;
+    int cols = circular_pupil->size2;
+
+    // Accumulator for the final spectral result
+    gsl_matrix* acc = gsl_matrix_calloc(rows, cols);
+
+    // Step 1: Find the star file name from listadat.txt using nEst
+    char libdir[1024] = "/home/cest/Workspace/playground/occultation_light_curve_simulator/occultation_simulator";  // Adjust getLibDir logic as needed
     char refFilePath[1024];
     sprintf(refFilePath, "%s/listadat.txt", libdir);
 
     FILE *refFile = fopen(refFilePath, "r");
     if (!refFile) {
-        perror("Failed to open reference file");
-        return;
+        fprintf(stderr, "Error: Cannot open %s\n", refFilePath);
+        return acc;  // Return an empty matrix
     }
 
-    // Read the nEst-th line from the reference file to get the data file name
-    char line[256];
-    char dataFileName[256];
+    char line[256], dataFileName[256] = {0};
     int currentLine = 0;
     while (fgets(line, sizeof(line), refFile)) {
         currentLine++;
-        if (currentLine == nEst) {
-            strncpy(dataFileName, line, strlen(line) - 1);  // Remove newline character
+        if (currentLine == (int) nEst) {
+            // Strip newline
+            size_t len = strlen(line);
+            if (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) {
+                line[len-1] = '\0';
+            }
+            strncpy(dataFileName, line, sizeof(dataFileName)-1);
             break;
         }
     }
     fclose(refFile);
 
-    // Construct the path to the data file
+    // Step 2: Open the star data file
     char dataFilePath[1024];
     sprintf(dataFilePath, "%s/spectra/%s", libdir, dataFileName);
 
-    // Open the data file
     FILE *dataFile = fopen(dataFilePath, "r");
     if (!dataFile) {
-        perror("Failed to open data file");
-        return;
+        fprintf(stderr, "Error: Cannot open data file %s\n", dataFilePath);
+        return acc; // Return empty
     }
 
-    int U0Size = nx * ny;
+    // We'll read up to nLmd lines from the star file
+    int nLmdas = (int) nLmd;
+    if (nLmdas < 1) {
+        nLmdas = 999999; // or read entire file if invalid
+    }
 
-    // Read data from the file and perform calculations
-    double lamda, peso;
-    double complex *output_intensity = (double complex *) malloc(U0Size * sizeof(double complex));
-    int count = 0;
-
-    // Assuming the data file has two columns: lamda and peso
-    while (fscanf(dataFile, "%lf,%lf", &lamda, &peso) == 2) {
-
-        // Weight the result by 'peso' and accumulate
-        for (int i = 0; i < U0Size; i++) {
-            acc[i] += output_intensity[i] * peso;
+    // Step 3: For each line, read (lambda, peso), compute fresnel * peso, accumulate
+    int lineCount = 0;
+    while (fgets(line, sizeof(line), dataFile)) {
+        if (lineCount >= nLmdas) {
+            break;
         }
 
-        count++;
-        if (count >= nLmdas) break;  // Stop after nLmdas iterations
-    }
+        double lamdaVal = 0.0;
+        double peso = 0.0;
+        if (sscanf(line, "%lf,%lf", &lamdaVal, &peso) == 2) {
+            // Convert lamda from Angstroms (1e-10) or your file’s scale to meters
+            double lamdaInMeters = lamdaVal * 1e-10;
 
+            // Fresnel result for this lamda
+            gsl_matrix* tmp = fresnel(circular_pupil, M, total_plane_size, object_distance, lamdaInMeters);
+
+            // Weighted sum
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    double valAcc = gsl_matrix_get(acc, i, j);
+                    double valTmp = gsl_matrix_get(tmp, i, j);
+                    gsl_matrix_set(acc, i, j, valAcc + valTmp * peso);
+                }
+            }
+            gsl_matrix_free(tmp);
+            lineCount++;
+        }
+    }
     fclose(dataFile);
-    free(output_intensity);
 
-    // Normalize and finalize the result
-    for (int i = 0; i < U0Size; i++) {
-        acc[i] /= acc[0];  // Normalize by the first element
+    // Step 4: Normalize by acc(0,0)
+    double normVal = gsl_matrix_get(acc, 0, 0);
+    if (fabs(normVal) > 1e-15) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                double oldVal = gsl_matrix_get(acc, i, j);
+                gsl_matrix_set(acc, i, j, oldVal / normVal);
+            }
+        }
     }
 
-
+    return acc;
 }
 
-typedef struct {
-    char tipo[10];  // Spectral type
-    double T;       // Temperature
-    double M;       // Absolute magnitude
-    double L;       // Luminosity relative to the Sun
-} Star;
 
 /*
  * Function to calculate the apparent radii of stars

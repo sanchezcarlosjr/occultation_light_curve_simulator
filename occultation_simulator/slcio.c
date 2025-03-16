@@ -59,6 +59,13 @@ gsl_matrix* HDF5Wrapper_readDataset(HDF5Wrapper* self, const char* datasetName, 
     return matrix;
 }
 
+char* HDF5Wrapper_readText(HDF5Wrapper* self, const char* datasetName)
+{
+    printf("Reading dataset %s\n", datasetName);
+   return NULL; 
+}
+
+
 double HDF5Wrapper_readScalar(HDF5Wrapper* self, const char* datasetName) {
     if (self == NULL || datasetName == NULL) {
         fprintf(stderr, "Invalid arguments: HDF5Wrapper or datasetName is NULL.\n");

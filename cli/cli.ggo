@@ -15,7 +15,7 @@ option "vr" r "Speed of the body if it goes against the direction of the earth i
 option "ang" a "Angle from opposition to calculate the tangential speed of the object in degrees" optional int default="30"
 option "fps" f "Frames per second" optional int default="20"
 option "mV" m "Apparent magnitude of the star" optional int default="12"
-option "nEst" n "Spectral type selection of the star" optional int default="30"
+option "nEst" n "Spectral type selection of the star. A0=1;A1=2;A2=3;A3=4;A4=5;A5=6;A7=7;F0=8;F2=9;F3=10;F5=11;F6=12;F7=13;F8=14;G0=15;G1=16;G2=17;G5=18;G8=19;K0=20;K1=21;K2=22;K3=23;K4=24;K5=25;K7=26;M0=27;M1=28;M2=29;M3=30;M4=31;M5=32;M6=33;M7=34;M8=35" optional int default="30"
 option "nLamb" N "Number of wavelengths to consider for spectral calculation" optional int default="10"
 
 option "d" d "Diameter of the object in meters" optional int default="3000"
@@ -23,3 +23,11 @@ option "ua" u "Distance of the object in astronomical units" optional double def
 option "toffset" t "Offset in pixels" optional int default="0"
 option "T" T "Reading direction in degrees" optional int default="0"
 option "b" b "Impact parameter in meters" optional int default="0"
+
+
+option "sepx" x "Object separation in pixels in x" optional int default="0"
+option "sepy" y "Object separation in pixels in y" optional int default="0"
+
+option "eccentricity" c "How much a conic object deviates from a circular one. 0 for a circular, between 0 and 1 for an elliptical." optional double default="0"
+
+

@@ -107,16 +107,50 @@ void test_calculates_monochromatic_diffraction_pattern(void) {
     hdf5->free(hdf5);
 }
 
+void test_calculates_chromatic_diffraction_pattern(void) {
+    HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
+    gsl_matrix* expected_matrix = hdf5->readDataset(hdf5, "chromatic_diffraction_pattern", M, M);
+    TEST_ASSERT_EQUAL(expected_matrix->size1, M);
+    TEST_ASSERT_EQUAL(expected_matrix->size2, M);
+
+    TEST_ASSERT_EQUAL(gsl_matrix_get(expected_matrix, 0, 0), 1);
+
+
+    double total_plane_size = hdf5->readScalar(hdf5, "total_plane_size");
+    double object_distance = hdf5->readScalar(hdf5, "object_distance");
+    double nEst = 1;
+    gsl_matrix* circular_pupil = hdf5->readDataset(hdf5, "circular_pupil", M, M);
+
+    gsl_matrix* chromatic_diffraction_pattern = spectra(circular_pupil, M, total_plane_size, object_distance, nEst, nLamb);
+
+    int result = gsl_matrix_equal_with_tolerance(expected_matrix, chromatic_diffraction_pattern, 0.7);
+    TEST_ASSERT_EQUAL(1, result);
+
+
+    gsl_matrix_free(expected_matrix);
+    hdf5->free(hdf5);
+}
+
+void test_calculates_pattern_for_extended_source(void) {
+    HDF5Wrapper* hdf5 = NewHDF5Wrapper("testing_simulation.h5");
+    hdf5->readText(hdf5, "star_type");
+
+}
+
+
+
 
 
 int main(void)
 {
     UNITY_BEGIN();
 
+    RUN_TEST(test_calculates_pattern_for_extended_source);
     RUN_TEST(test_it_calculates_the_optimal_plane_size);
     RUN_TEST(test_it_generates_a_circular_obstruction);
     RUN_TEST(test_it_calculates_distance_of_object_in_meters);
     RUN_TEST(test_calculates_monochromatic_diffraction_pattern);
+    RUN_TEST(test_calculates_chromatic_diffraction_pattern);
 
     return UNITY_END();
 }
